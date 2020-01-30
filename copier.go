@@ -2,6 +2,7 @@ package copier
 
 import (
 	"database/sql"
+	"database/sql/driver"
 	"errors"
 	"reflect"
 )
@@ -48,6 +49,11 @@ func Copy(toValue interface{}, fromValue interface{}) (err error) {
 	for i := 0; i < amount; i++ {
 		var dest, source reflect.Value
 
+		//srcFieldValue := srcValue.FieldByName(f)
+		//srcFieldType, srcFieldFound := srcValue.Type().FieldByName(f)
+		//srcFieldName := srcFieldType.Name
+		//dstFieldName := srcFieldName
+
 		if isSlice {
 			// source
 			if from.Kind() == reflect.Slice {
@@ -62,7 +68,7 @@ func Copy(toValue interface{}, fromValue interface{}) (err error) {
 			dest = indirect(to)
 		}
 
-		// check source
+		// Valuer -> ptr
 		if source.IsValid() {
 			fromTypeFields := deepFields(fromType)
 			//fmt.Printf("%#v", fromTypeFields)
@@ -73,6 +79,48 @@ func Copy(toValue interface{}, fromValue interface{}) (err error) {
 				if fromField := source.FieldByName(name); fromField.IsValid() {
 					// has field
 					if toField := dest.FieldByName(name); toField.IsValid() {
+						if isNullableType(fromField.Type()) && toField.Kind() == reflect.Ptr {
+							// We have same nullable type on both sides
+							if fromField.Type().AssignableTo(toField.Type()) {
+								toField.Set(fromField)
+								continue
+							}
+
+							v, _ := fromField.Interface().(driver.Valuer).Value()
+							if v == nil {
+								continue
+							}
+
+							valueType := reflect.TypeOf(v)
+
+							ptr := reflect.New(valueType)
+							ptr.Elem().Set(reflect.ValueOf(v))
+
+							if valueType.AssignableTo(toField.Type().Elem()) {
+								toField.Set(ptr)
+							}
+
+							continue
+						} else if isNullableType(fromField.Type()) {
+							// We have same nullable type on both sides
+							if fromField.Type().AssignableTo(toField.Type()) {
+								toField.Set(fromField)
+								continue
+							}
+
+							v, _ := fromField.Interface().(driver.Valuer).Value()
+							if v == nil {
+								continue
+							}
+
+							rv := reflect.ValueOf(v)
+							if rv.Type().AssignableTo(toField.Type()) {
+								toField.Set(rv)
+							}
+
+							continue
+						}
+
 						if toField.CanSet() {
 							if !set(toField, fromField) {
 								if err := Copy(toField.Addr().Interface(), fromField.Interface()); err != nil {
@@ -126,6 +174,10 @@ func Copy(toValue interface{}, fromValue interface{}) (err error) {
 		}
 	}
 	return
+}
+
+func isNullableType(t reflect.Type) bool {
+	return t.ConvertibleTo(reflect.TypeOf((*driver.Valuer)(nil)).Elem())
 }
 
 func deepFields(reflectType reflect.Type) []reflect.StructField {

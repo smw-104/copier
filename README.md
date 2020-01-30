@@ -52,7 +52,7 @@ func main() {
 		employees = []Employee{}
 	)
 
-	copier.Copy(&employee, &user)
+	Copy(&employee, &user)
 
 	fmt.Printf("%#v \n", employee)
 	// Employee{
@@ -64,7 +64,7 @@ func main() {
 	// }
 
 	// Copy struct to slice
-	copier.Copy(&employees, &user)
+	Copy(&employees, &user)
 
 	fmt.Printf("%#v \n", employees)
 	// []Employee{
@@ -73,7 +73,7 @@ func main() {
 
 	// Copy slice to slice
 	employees = []Employee{}
-	copier.Copy(&employees, &users)
+	Copy(&employees, &users)
 
 	fmt.Printf("%#v \n", employees)
 	// []Employee{
