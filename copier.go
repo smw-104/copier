@@ -227,7 +227,11 @@ func set(to, from reflect.Value) bool {
 		if from.Type().ConvertibleTo(to.Type()) {
 			to.Set(from.Convert(to.Type()))
 		} else if scanner, ok := to.Addr().Interface().(sql.Scanner); ok {
-			err := scanner.Scan(from.Interface())
+			fromFieldInterface := from.Interface()
+			if from.Kind() == reflect.Ptr {
+				fromFieldInterface = from.Elem().Interface()
+			}
+			err := scanner.Scan(fromFieldInterface)
 			if err != nil {
 				return false
 			}

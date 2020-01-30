@@ -10,38 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type User struct {
-	Name     string
-	Birthday *time.Time
-	Nickname string
-	Role     string
-	Age      int32
-	FakeAge  *int32
-	Notes    []string
-	flags    []byte
-}
-
-func (user User) DoubleAge() int32 {
-	return 2 * user.Age
-}
-
-type Employee struct {
-	Name      string
-	Birthday  *time.Time
-	Nickname  *string
-	Age       int64
-	FakeAge   int
-	EmployeID int64
-	DoubleAge int32
-	SuperRule string
-	Notes     []string
-	flags     []byte
-}
-
-func (employee *Employee) Role(role string) {
-	employee.SuperRule = "Super " + role
-}
-
 // The User model.
 type NewUser struct {
 	Ssn       []byte
@@ -78,9 +46,41 @@ func TestUser(t *testing.T) {
 	jUser2 := &jsonUser{Ssn: "123-45-6789", Income: 30000, IncomePtr: createFloat64(30000)}
 
 	Copy(user2, jUser2)
-	assert.Equal(t, string(user2.Ssn), jUser2.Ssn)
-	assert.Equal(t, user2.Income.Float64, jUser2.Income)
-	assert.Equal(t, user2.IncomePtr.Float64, *jUser2.IncomePtr)
+	assert.Equal(t, jUser2.Ssn, string(user2.Ssn))
+	assert.Equal(t, jUser2.Income, user2.Income.Float64)
+	assert.Equal(t, *jUser2.IncomePtr, user2.IncomePtr.Float64)
+}
+
+type User struct {
+	Name     string
+	Birthday *time.Time
+	Nickname string
+	Role     string
+	Age      int32
+	FakeAge  *int32
+	Notes    []string
+	flags    []byte
+}
+
+func (user User) DoubleAge() int32 {
+	return 2 * user.Age
+}
+
+type Employee struct {
+	Name      string
+	Birthday  *time.Time
+	Nickname  *string
+	Age       int64
+	FakeAge   int
+	EmployeID int64
+	DoubleAge int32
+	SuperRule string
+	Notes     []string
+	flags     []byte
+}
+
+func (employee *Employee) Role(role string) {
+	employee.SuperRule = "Super " + role
 }
 
 func checkEmployee(employee Employee, user User, t *testing.T, testCase string) {
