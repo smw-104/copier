@@ -229,7 +229,11 @@ func set(to, from reflect.Value) bool {
 		} else if scanner, ok := to.Addr().Interface().(sql.Scanner); ok {
 			fromFieldInterface := from.Interface()
 			if from.Kind() == reflect.Ptr {
-				fromFieldInterface = from.Elem().Interface()
+				if !from.IsZero() {
+					fromFieldInterface = from.Elem().Interface()
+				} else {
+					return true
+				}
 			}
 			err := scanner.Scan(fromFieldInterface)
 			if err != nil {

@@ -51,6 +51,21 @@ func TestUser(t *testing.T) {
 	assert.Equal(t, *jUser2.IncomePtr, user2.IncomePtr.Float64)
 }
 
+func TestUserNil(t *testing.T) {
+	user3 := &NewUser{IncomePtr: sql.NullFloat64{Float64: 50000, Valid: false}}
+	jUser3 := &jsonUser{}
+
+	Copy(jUser3, user3)
+	assert.Nil(t, jUser3.IncomePtr)
+
+	user4 := &NewUser{}
+	jUser4 := &jsonUser{IncomePtr: nil}
+
+	Copy(user4, jUser4)
+	assert.Zero(t, user4.IncomePtr.Float64)
+	assert.False(t, user4.IncomePtr.Valid)
+}
+
 type User struct {
 	Name     string
 	Birthday *time.Time
