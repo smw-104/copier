@@ -218,7 +218,10 @@ func set(to, from reflect.Value) bool {
 			if from.Kind() == reflect.Ptr && from.IsNil() {
 				to.Set(reflect.Zero(to.Type()))
 				return true
+			} else if to.IsNil() && to.Kind() == reflect.Ptr {
+				return true
 			} else if to.IsNil() {
+				// TODO: Commenting out because we don't need to set it.
 				to.Set(reflect.New(to.Type().Elem()))
 			}
 			to = to.Elem()
