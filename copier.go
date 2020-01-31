@@ -88,6 +88,12 @@ func Copy(toValue interface{}, fromValue interface{}) (err error) {
 
 							v, _ := fromField.Interface().(driver.Valuer).Value()
 							if v == nil {
+								if toField.Kind() == reflect.Ptr {
+									pf := reflect.New(toField.Type().Elem())
+									if pf.Elem().Kind() == reflect.Ptr {
+										toField.Set(pf)
+									}
+								}
 								continue
 							}
 
@@ -233,6 +239,10 @@ func set(to, from reflect.Value) bool {
 				to.Set(reflect.Zero(to.Type()))
 				return true
 			} else if from.Kind() != reflect.String && from.IsNil() && to.IsNil() && to.Kind() == reflect.Ptr {
+				pf := reflect.New(to.Type().Elem())
+				if pf.Elem().Kind() == reflect.Ptr {
+					to.Set(pf)
+				}
 				return true
 			} else if to.IsNil() {
 				// TODO: Commenting out because we don't need to set it.

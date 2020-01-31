@@ -136,8 +136,9 @@ func TestUserNil3(t *testing.T) {
 	user3 := &NilUser2{SsnPtr: nil}
 	jUser3 := &jsonNilUser2{}
 
+	var ss *string = nil
 	Copy(jUser3, user3)
-	assert.Nil(t, jUser3.SsnPtr)
+	assert.Equal(t, &ss, jUser3.SsnPtr)
 
 	user4 := &NilUser2{}
 	jUser4 := &jsonNilUser2{SsnPtr: nil}
@@ -203,6 +204,42 @@ func TestUserNil4(t *testing.T) {
 	Copy(jUser5, user5)
 	assert.Equal(t, user5.IncomePtrPtr.Float64, **jUser5.IncomePtrPtr)
 	assert.Equal(t, "test", **jUser5.SsnPtrPtr)
+
+	user7 := &NilUser3{SsnPtrPtr: nil, IncomePtrPtr: sql.NullFloat64{Float64: 0, Valid: false}}
+	jUser7 := &jsonNilUser3{}
+
+	Copy(jUser7, user7)
+	var pp *float64 = nil
+	var ss *string = nil
+	assert.Equal(t, &pp, jUser7.IncomePtrPtr)
+	assert.Equal(t, &ss, jUser7.SsnPtrPtr)
+}
+
+// The User model.
+type NilUser4 struct {
+	IncomePtrPtr sql.NullFloat64
+	SsnPtrPtr    []byte
+}
+
+// An alias used to support custom JSON marshalling/unmarshalling.
+type nilUserAlias4 NilUser4
+
+// A subclass used to support custom JSON marshalling/unmarshalling.
+type jsonNilUser4 struct {
+	nilUserAlias4
+	IncomePtrPtr **float64
+	SsnPtrPtr    **string
+}
+
+func TestUserNil5(t *testing.T) {
+	user7 := &NilUser4{SsnPtrPtr: nil, IncomePtrPtr: sql.NullFloat64{Float64: 0, Valid: false}}
+	jUser7 := &jsonNilUser4{}
+
+	Copy(jUser7, user7)
+	var pp *float64 = nil
+	var ss *string = nil
+	assert.Equal(t, &pp, jUser7.IncomePtrPtr)
+	assert.Equal(t, &ss, jUser7.SsnPtrPtr)
 }
 
 type User struct {
