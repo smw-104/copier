@@ -96,8 +96,18 @@ func Copy(toValue interface{}, fromValue interface{}) (err error) {
 							ptr := reflect.New(valueType)
 							ptr.Elem().Set(reflect.ValueOf(v))
 
-							if valueType.AssignableTo(toField.Type().Elem()) {
-								toField.Set(ptr)
+							assignableToField := toField
+							assignableFieldType := assignableToField.Type()
+							previousAssignableToField := assignableToField
+							for assignableToField.Kind() == reflect.Ptr {
+								previousAssignableToField = assignableToField
+								assignableToField.Set(reflect.New(assignableToField.Type().Elem()))
+								assignableToField = reflect.Indirect(assignableToField)
+								assignableFieldType = assignableFieldType.Elem()
+							}
+
+							if valueType.AssignableTo(assignableFieldType) { //toField.Type().Elem()
+								previousAssignableToField.Set(ptr)
 							}
 
 							continue
@@ -212,8 +222,12 @@ func indirectType(reflectType reflect.Type) reflect.Type {
 }
 
 func set(to, from reflect.Value) bool {
+	for from.Kind() == reflect.Ptr {
+		from = reflect.Indirect(from)
+	}
+
 	if from.IsValid() {
-		if to.Kind() == reflect.Ptr {
+		for to.Kind() == reflect.Ptr {
 			//set `to` to nil if from is nil
 			if from.Kind() == reflect.Ptr && from.IsNil() {
 				to.Set(reflect.Zero(to.Type()))

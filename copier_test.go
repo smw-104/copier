@@ -12,10 +12,11 @@ import (
 
 // The User model.
 type NewUser struct {
-	Ssn       []byte
-	Income    sql.NullFloat64
-	IncomePtr sql.NullFloat64
-	SsnPtr    []byte
+	Ssn          []byte
+	Income       sql.NullFloat64
+	IncomePtr    sql.NullFloat64
+	IncomePtrPtr sql.NullFloat64
+	SsnPtr       []byte
 }
 
 // An alias used to support custom JSON marshalling/unmarshalling.
@@ -24,33 +25,41 @@ type userAlias User
 // A subclass used to support custom JSON marshalling/unmarshalling.
 type jsonUser struct {
 	userAlias
-	Income    float64
-	IncomePtr *float64
-	Ssn       string
-	SsnPtr    *string
+	Income       float64
+	IncomePtr    *float64
+	IncomePtrPtr **float64
+	Ssn          string
+	SsnPtr       *string
 }
 
 func createFloat64(x float64) *float64 {
 	return &x
 }
 
+func createFloat64PtrPtr(x float64) **float64 {
+	y := &x
+	return &y
+}
+
 func TestUser(t *testing.T) {
 	user := &NewUser{Ssn: []byte("123-45-6789"), Income: sql.NullFloat64{Float64: 30000, Valid: true},
-		IncomePtr: sql.NullFloat64{Float64: 50000, Valid: true}}
+		IncomePtr: sql.NullFloat64{Float64: 50000, Valid: true}, IncomePtrPtr: sql.NullFloat64{Float64: 70000, Valid: true}}
 	jUser := &jsonUser{}
 
 	Copy(jUser, user)
 	assert.Equal(t, string(user.Ssn), jUser.Ssn)
 	assert.Equal(t, user.Income.Float64, jUser.Income)
 	assert.Equal(t, user.IncomePtr.Float64, *jUser.IncomePtr)
+	assert.Equal(t, user.IncomePtrPtr.Float64, **jUser.IncomePtrPtr)
 
 	user2 := &NewUser{}
-	jUser2 := &jsonUser{Ssn: "123-45-6789", Income: 30000, IncomePtr: createFloat64(30000)}
+	jUser2 := &jsonUser{Ssn: "123-45-6789", Income: 30000, IncomePtr: createFloat64(30000), IncomePtrPtr: createFloat64PtrPtr(70000)}
 
 	Copy(user2, jUser2)
 	assert.Equal(t, jUser2.Ssn, string(user2.Ssn))
 	assert.Equal(t, jUser2.Income, user2.Income.Float64)
 	assert.Equal(t, *jUser2.IncomePtr, user2.IncomePtr.Float64)
+	assert.Equal(t, **jUser2.IncomePtrPtr, user2.IncomePtrPtr.Float64)
 }
 
 func TestUserNil(t *testing.T) {
@@ -107,6 +116,93 @@ func TestUserNil2(t *testing.T) {
 
 	Copy(user6, jUser6)
 	assert.Equal(t, *jUser6.SsnPtr, string(user6.SsnPtr))
+}
+
+// The User model.
+type NilUser2 struct {
+	SsnPtr []byte
+}
+
+// An alias used to support custom JSON marshalling/unmarshalling.
+type nilUserAlias2 NilUser2
+
+// A subclass used to support custom JSON marshalling/unmarshalling.
+type jsonNilUser2 struct {
+	nilUserAlias2
+	SsnPtr **string
+}
+
+func TestUserNil3(t *testing.T) {
+	user3 := &NilUser2{SsnPtr: nil}
+	jUser3 := &jsonNilUser2{}
+
+	Copy(jUser3, user3)
+	assert.Nil(t, jUser3.SsnPtr)
+
+	user4 := &NilUser2{}
+	jUser4 := &jsonNilUser2{SsnPtr: nil}
+
+	Copy(user4, jUser4)
+	assert.Nil(t, user4.SsnPtr)
+
+	user5 := &NilUser2{SsnPtr: []byte("test")}
+	jUser5 := &jsonNilUser2{}
+
+	Copy(jUser5, user5)
+	assert.Equal(t, string(user5.SsnPtr), **jUser5.SsnPtr)
+
+	str := "test"
+	str2 := &str
+	user6 := &NilUser2{}
+	jUser6 := &jsonNilUser2{SsnPtr: &str2}
+
+	Copy(user6, jUser6)
+	assert.Equal(t, **jUser6.SsnPtr, string(user6.SsnPtr))
+}
+
+// The User model.
+type NilUser3 struct {
+	IncomePtrPtr sql.NullFloat64
+	SsnPtrPtr    []byte
+}
+
+// An alias used to support custom JSON marshalling/unmarshalling.
+type nilUserAlias3 NilUser3
+
+// A subclass used to support custom JSON marshalling/unmarshalling.
+type jsonNilUser3 struct {
+	nilUserAlias3
+	IncomePtrPtr **float64
+	SsnPtrPtr    **string
+}
+
+func TestUserNil4(t *testing.T) {
+	var x *float64 = nil
+	var y *string = nil
+	user3 := &NilUser3{}
+	jUser3 := &jsonNilUser3{IncomePtrPtr: &x, SsnPtrPtr: &y}
+
+	Copy(user3, jUser3)
+	assert.Equal(t, float64(0), user3.IncomePtrPtr.Float64)
+	assert.Equal(t, false, user3.IncomePtrPtr.Valid)
+	assert.Equal(t, []uint8([]byte(nil)), user3.SsnPtrPtr)
+
+	user6 := &NilUser3{}
+	xx := "test"
+	yy := &xx
+	jUser6 := &jsonNilUser3{SsnPtrPtr: &yy, IncomePtrPtr: createFloat64PtrPtr(1)}
+
+	Copy(user6, jUser6)
+	assert.Equal(t, **jUser6.IncomePtrPtr, user6.IncomePtrPtr.Float64)
+	assert.Equal(t, user6.IncomePtrPtr.Valid, true)
+	assert.Equal(t, **jUser6.SsnPtrPtr, "test")
+
+	user5 := &NilUser3{SsnPtrPtr: []byte("test"), IncomePtrPtr: sql.NullFloat64{Float64: 70000, Valid: true}}
+	jUser5 := &jsonNilUser3{}
+
+	Copy(jUser5, user5)
+	assert.Equal(t, user5.IncomePtrPtr.Float64, **jUser5.IncomePtrPtr)
+	assert.Equal(t, "test", **jUser5.SsnPtrPtr)
 }
 
 type User struct {
