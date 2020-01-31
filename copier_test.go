@@ -89,11 +89,24 @@ func TestUserNil2(t *testing.T) {
 	Copy(jUser3, user3)
 	assert.Nil(t, jUser3.SsnPtr)
 
-	//user4 := &NilUser{}
-	//jUser4 := &jsonNilUser{SsnPtr: nil}
+	user4 := &NilUser{}
+	jUser4 := &jsonNilUser{SsnPtr: nil}
 
-	//Copy(user4, jUser4)
-	//assert.Nil(t, user4.SsnPtr)
+	Copy(user4, jUser4)
+	assert.Nil(t, user4.SsnPtr)
+
+	user5 := &NilUser{SsnPtr: []byte("test")}
+	jUser5 := &jsonNilUser{}
+
+	Copy(jUser5, user5)
+	assert.Equal(t, string(user5.SsnPtr), *jUser5.SsnPtr)
+
+	str := "test"
+	user6 := &NilUser{}
+	jUser6 := &jsonNilUser{SsnPtr: &str}
+
+	Copy(user6, jUser6)
+	assert.Equal(t, *jUser6.SsnPtr, string(user6.SsnPtr))
 }
 
 type User struct {
@@ -423,7 +436,7 @@ func TestScanner(t *testing.T) {
 		t.Error("Should not raise error")
 	}
 
-	/*if s.V.V != s2.V.V {
+	if s.V.V != s2.V.V {
 		t.Errorf("Field V should be copied")
-	}*/
+	}
 }
